@@ -11,6 +11,7 @@ const complaintSchema=new Schema({
     },
     status:{
         type:String,
+        enum:["pending","accepted","resolved","rejected"],
         required:true
     },
     createdAt:{
@@ -21,9 +22,9 @@ const complaintSchema=new Schema({
         type:Date,
         required:true
     },
-    complainImage:{
+    complaintImage:{
         type:String //cloudinary url
     }
 })
 
-export const Complain=mongoose.model("Complaint",complaintSchema);
+export const Complaint=mongoose.model("Complaint",complaintSchema);

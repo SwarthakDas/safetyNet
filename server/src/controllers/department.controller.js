@@ -1,12 +1,11 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js"
-import {Department} from "../models/Department.models.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 import { Department } from "../models/department.model.js";
 
-const generateAccessAndRefreshToken=async(DepartmentID)=>{
+const generateAccessAndRefreshTokenDept=async(DepartmentID)=>{
   try {
     const Department=await Department.findById(DepartmentID)
     const accessToken=Department.generateAccessToken()
@@ -90,7 +89,7 @@ const loginDepartment=asyncHandler(async(req,res)=>{
     throw new ApiError(401, "Invalid Department credentials")
   }
 
-  const {accessToken, refreshToken}= await generateAccessAndRefreshToken(Department._id)
+  const {accessToken, refreshToken}= await generateAccessAndRefreshTokenDept(Department._id)
 
   const loggedInDepartment=await Department.findById(Department._id).select("-password -refreshToken")
 
@@ -136,7 +135,7 @@ const logoutDepartment=asyncHandler(async(req, res)=>{
   .json(new ApiResponse(200,{},"Department logged out successfully"))
 })
 
-const refreshAccessToken=asyncHandler(async(req, res)=>{
+const refreshAccessTokendept=asyncHandler(async(req, res)=>{
   const incomingRefreshToken=req.cookies.refreshToken || req.body.refreshToken//what is this req.body.refreshtoken?
   if(!incomingRefreshToken){
     throw new ApiError(401, "Unauthorized request")
@@ -174,7 +173,7 @@ const refreshAccessToken=asyncHandler(async(req, res)=>{
   }
 })
 
-const changeCurrentPassword=asyncHandler(async(req,res)=>{
+const changeCurrentPassworddept=asyncHandler(async(req,res)=>{
   const{oldPassword, newPassword}=req.body
   const Department=await Department.findById(req.Department?._id)
   const isPasswordCorrent=await Department.isPasswordCorrect(oldPassword)
@@ -193,7 +192,7 @@ const getCurrentDepartment=asyncHandler(async(req,res)=>{
   .json(new ApiResponse(200, req.Department, "Current Department fetched successfully"))
 })
 
-const updateAccountDetails=asyncHandler(async(req,res)=>{
+const updateAccountDetailsdept=asyncHandler(async(req,res)=>{
   const{fullName, email}=req.body
   if(!fullName||!email){
     throw new ApiError(400,"All fields are required")
@@ -213,3 +212,13 @@ const updateAccountDetails=asyncHandler(async(req,res)=>{
   return res.status(200)
   .json(new ApiResponse(200,Department,"Account Details Updated Successfully"))
 })
+
+export {
+    registerDepartment,
+    loginDepartment,
+    logoutDepartment,
+    refreshAccessTokendept,
+    changeCurrentPassworddept,
+    getCurrentDepartment,
+    updateAccountDetailsdept
+}

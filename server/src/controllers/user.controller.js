@@ -1,11 +1,11 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js"
-import {User} from "../models/user.models.js"
+import { User } from "../models/user.model.js";
 import {ApiResponse} from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 
-const generateAccessAndRefreshToken=async(userID)=>{
+const generateAccessAndRefreshTokenUser=async(userID)=>{
   try {
     const user=await User.findById(userID)
     const accessToken=user.generateAccessToken()
@@ -89,7 +89,7 @@ const loginUser=asyncHandler(async(req,res)=>{
     throw new ApiError(401, "Invalid user credentials")
   }
 
-  const {accessToken, refreshToken}= await generateAccessAndRefreshToken(user._id)
+  const {accessToken, refreshToken}= await generateAccessAndRefreshTokenUser(user._id)
 
   const loggedInUser=await User.findById(user._id).select("-password -refreshToken")
 
@@ -135,7 +135,7 @@ const logoutUser=asyncHandler(async(req, res)=>{
   .json(new ApiResponse(200,{},"User logged out successfully"))
 })
 
-const refreshAccessToken=asyncHandler(async(req, res)=>{
+const refreshAccessTokenUser=asyncHandler(async(req, res)=>{
   const incomingRefreshToken=req.cookies.refreshToken || req.body.refreshToken//what is this req.body.refreshtoken?
   if(!incomingRefreshToken){
     throw new ApiError(401, "Unauthorized request")
@@ -157,7 +157,7 @@ const refreshAccessToken=asyncHandler(async(req, res)=>{
       httpOnly: true,
       secure: true
     }
-    const {accessToken, newRefreshToken}=await generateAccessAndRefreshToken(user._id)
+    const {accessToken, newRefreshToken}=await generateAccessAndRefreshTokenUser(user._id)
   
     return res.status(200)
     .cookie("accessToken", accessToken, options)
@@ -173,11 +173,11 @@ const refreshAccessToken=asyncHandler(async(req, res)=>{
   }
 })
 
-const changeCurrentPassword=asyncHandler(async(req,res)=>{
+const changeCurrentPasswordUser=asyncHandler(async(req,res)=>{
   const{oldPassword, newPassword}=req.body
   const user=await User.findById(req.user?._id)
   const isPasswordCorrent=await user.isPasswordCorrect(oldPassword)
-  if(!isPasswordCorrect){
+  if(!isPasswordCorrent){
     throw new ApiError(400,"Invalid Old password")
   }
 
@@ -206,9 +206,18 @@ const updateAccountDetails=asyncHandler(async(req,res)=>{
         email:email
       }
     },
-    {new:true}//we need to set new as true otherwise it will return old data back
+    {new:true}
   ).select("-passoword")
 
   return res.status(200)
   .json(new ApiResponse(200,user,"Account Details Updated Successfully"))
 })
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    getCurrentUser,
+    refreshAccessTokenUser,
+    changeCurrentPasswordUser
+}
