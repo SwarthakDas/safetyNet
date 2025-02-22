@@ -6,11 +6,6 @@ const emergencySchema=new Schema(
             type:Schema.Types.ObjectId,
             ref:"Department"
         },
-        requestDept:{
-            type:String,
-            enum: ["fire_official", "police_official"],
-            required:true
-        },
         requestType:{
             type:String,
             required:true

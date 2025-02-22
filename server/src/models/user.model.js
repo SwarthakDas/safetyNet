@@ -2,37 +2,50 @@ import mongoose,{Schema} from "mongoose"
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-const userSchema=new Schema(
+const userSchema = new Schema(
     {
-        username:{
-            type:String,
+        username: {
+            type: String,
             required: true,
             unique: true,
-            lowercase:true,
-            trim:true,
-            index:true
+            lowercase: true,
+            trim: true,
+            index: true
         },
-        email:{
-            type:String,
+        email: {
+            type: String,
             required: true,
             unique: true,
-            lowercase:true,
-            trim:true,
+            lowercase: true,
+            trim: true,
         },
-        fullname:{
-            type:String,
+        firstname: {
+            type: String,
             required: true,
-            trim:true,
-            index:true
+            trim: true,
+            index: true
         },
-        password:{
-            type:String,
-            required:[true,'Password is required']
+        lastname: {
+            type: String,
+            required: true,
+            trim: true,
+            index: true
         },
-        refreshToken:{
-            type:String
+        password: {
+            type: String,
+            required: [true, 'Password is required']
+        },
+        refreshToken: {
+            type: String
+        },
+        location: {
+            latitude: {
+                type: String,
+            },
+            longitude: {
+                type: String,
+            }
         }
-
     },
     {
         timestamps: true

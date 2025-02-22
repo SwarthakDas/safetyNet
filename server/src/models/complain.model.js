@@ -1,22 +1,18 @@
 import mongoose,{Schema} from "mongoose";
 
 const complaintSchema=new Schema({
-    complaint:{
+    complain:{
         type:String,
         required:true,
-
     },
     raisedBy:{
         type:Schema.Types.ObjectId,
         ref:"User"
     },
-    category:{
-        type:String,
-        required:true,
-    },
-    description:{
-        type:String,
-        required:true,
+    department: { 
+        type: String, 
+        enum: ["fire_official", "police_official"], 
+        required: true 
     },
     status:{
         type:String,
@@ -29,7 +25,10 @@ const complaintSchema=new Schema({
     lastupdated:{
         type:Date,
         required:true
+    },
+    complainImage:{
+        type:String //cloudinary url
     }
 })
 
-export const Complaint=mongoose.model("Complaint",complaintSchema);
+export const Complain=mongoose.model("Complaint",complaintSchema);

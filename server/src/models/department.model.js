@@ -37,6 +37,14 @@ const departmentSchema=new Schema(
         },
         refreshToken:{
             type:String
+        },
+        location: {
+            latitude: {
+                type: String,
+            },
+            longitude: {
+                type: String,
+            }
         }
 
     },
