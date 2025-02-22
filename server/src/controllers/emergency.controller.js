@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { Emergency } from "../models/emergency.model";
 
-const Emergency=asyncHandler(async(req,res)=>{
+const createEmergency=asyncHandler(async(req,res)=>{
     const {requestType,status,description}=req.body
     const {raisedBy}=req.params;
     if(
@@ -66,3 +66,9 @@ const getRequest=asyncHandler(async(req,res)=>{
         new ApiResponse(200,emergency,"Emergency fetched successfully")
     )
 })
+
+export {
+    createEmergency,
+    updateEmergency,
+    getRequest
+}

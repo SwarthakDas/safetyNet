@@ -53,41 +53,41 @@ const departmentSchema=new Schema(
     }
 )
 
-userSchema.pre("save", async function(next){
+departmentSchema.pre("save", async function(next){
     if(!this.isModified("password")) return next();
     this.password=await bcrypt.hash(this.password, 10)
     next()
 })
 
-userSchema.methods.isPasswordCorrect=async function(password){
+departmentSchema.methods.isPasswordCorrect=async function(password){
     return await bcrypt.compare(password, this.password)
 }
 
-userSchema.methods.generateAccessToken=function(){
+departmentSchema.methods.generateAccessToken=function(){
     return jwt.sign({
         _id:this._id,
         email:this.email,
         username:this.username,
         fullname:this.fullname
     },
-    process.env.ACCESS_TOKEN_SECRET,
+    process.env.ACCESS_TOKEN_SECRET_DEPT,
     {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY_DEPT
     }
 )
 }
-userSchema.methods.generateRefreshToken=function(){
+departmentSchema.methods.generateRefreshToken=function(){
     return jwt.sign({
         _id:this._id,
         email:this.email,
         username:this.username,
         fullname:this.fullname
     },
-    process.env.REFRESH_TOKEN_SECRET,
+    process.env.REFRESH_TOKEN_SECRET_DEPT,
     {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRY
     }
 )
 }
 
-export const Department=mongoose.model("Department",userSchema)
+export const Department=mongoose.model("Department",departmentSchema)
