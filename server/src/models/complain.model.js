@@ -9,11 +9,6 @@ const complaintSchema=new Schema({
         type:Schema.Types.ObjectId,
         ref:"User"
     },
-    department: { 
-        type: String, 
-        enum: ["fire_official", "police_official"], 
-        required: true 
-    },
     status:{
         type:String,
         required:true
