@@ -5,7 +5,7 @@ import { Complain } from "../models/complain.model";
 import { uploaOnCloudinary } from "../utils/Cloudinary";
 
 const fileComplain=asyncHandler(async(req,res)=>{
-    const{complain,raisedBy,status,department}=req.body
+    const{complain,raisedBy,status}=req.body
     if(!complain && !raisedBy){
         throw new ApiError(400,"Error creating Complain")
     }
@@ -26,7 +26,6 @@ const fileComplain=asyncHandler(async(req,res)=>{
     const newComplain=await Complain.create({
         complain,
         raisedBy,
-        department,
         status,
         createdAt:new Date(),
         complainImage:complainImage.url
