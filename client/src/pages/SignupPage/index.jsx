@@ -43,6 +43,7 @@ const {
   resolver: zodResolver(role === "User" ? userSchema : deptSchema),
 });
 
+
 const [location, setLocation] = useState(null);
 
 const getLocation = () => {
@@ -117,6 +118,7 @@ const onSubmit = async (data) => {
    
 
     console.log("Data:", data);
+    navigate("/login")
 
   } catch (error) {
     console.error("Error:", error);

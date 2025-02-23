@@ -3,18 +3,69 @@ import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useCookies } from "react-cookie";
 
 export default function UserProfile() {
   const [complaints, setComplaints] = useState([]);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [complaintDescription, setComplaintDescription] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
   const [emergencies, setEmergencies] = useState([]);
   const navigate=useNavigate()
   const [loggedin,setLoggedin]=useState(true)
+  const [location, setLocation] = useState(null); 
   const {id,accessToken}=useSelector((state)=>state.auth)
+
+  const getLocation = () => {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latitude = position.coords.latitude.toFixed(6);
+          const longitude = position.coords.longitude.toFixed(6);
+          setLocation({ latitude, longitude });
+          resolve({ latitude, longitude });
+        },
+        (err) => {
+          console.error(err);
+          reject(err);
+        }
+      );
+    });
+  };
+  
+  
+
+  const sendEmergencyEmail = async () => {
+    
+    try {
+      let loc = location;
+    if (!loc) {
+      loc = await getLocation(); // Wait until location is fetched
+    }
+    const latitude = loc.latitude;
+    const longitude = loc.longitude;
+    
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/department/profile/emergency-email`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}` // Attach token
+            },
+            body: JSON.stringify({ latitude:latitude, longitude:longitude, subject:"Disaster", message:complaintDescription }),
+            credentials: "include"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to send emergency email");
+        }
+
+        return { success: true, data };
+    } catch (error) {
+        console.error("Error sending emergency email:", error);
+        return { success: false, error: error.message };
+    }
+};
 
 
 
@@ -68,20 +119,7 @@ export default function UserProfile() {
     ]);
   }, []);
 
-  const handleComplaintSubmit = () => {
-    const newComplaint = {
-      id: complaints.length + 1,
-      description: complaintDescription,
-      status: "pending",
-      createdAt: new Date().toLocaleString(),
-      location: "Current Location",
-    };
-
-    setComplaints([newComplaint, ...complaints]);
-    setIsModalOpen(false);
-    setComplaintDescription("");
-    setSelectedImage(null);
-  };
+ 
 
   // const [cookies, setCookie, removeCookie] = useCookies(["accessToken"]);
 
@@ -224,14 +262,8 @@ export default function UserProfile() {
               value={complaintDescription}
               onChange={(e) => setComplaintDescription(e.target.value)}
             />
-            <input
-              type="file"
-              accept="image/*"
-              className="mb-4"
-              onChange={(e) => setSelectedImage(e.target.files[0])}
-            />
             <div className="flex justify-between">
-              <button onClick={handleComplaintSubmit} className="bg-green-600 text-white px-4 py-2 rounded-md">
+              <button onClick={sendEmergencyEmail} className="bg-green-600 text-white px-4 py-2 rounded-md">
                 Submit
               </button>
               <button onClick={() => setIsModalOpen(false)} className="bg-red-600 text-white px-4 py-2 rounded-md">
