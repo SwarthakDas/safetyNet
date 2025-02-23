@@ -9,6 +9,7 @@ export default function UserProfile() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [complaintDescription, setComplaintDescription] = useState("");
+  const [subject, setSubject] = useState("");
   const [emergencies, setEmergencies] = useState([]);
   const navigate=useNavigate()
   const [loggedin,setLoggedin]=useState(true)
@@ -35,6 +36,7 @@ export default function UserProfile() {
   
 
   const sendEmergencyEmail = async () => {
+    console.log("raise emergency")
     
     try {
       let loc = location;
@@ -50,7 +52,7 @@ export default function UserProfile() {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${accessToken}` // Attach token
             },
-            body: JSON.stringify({ latitude:latitude, longitude:longitude, subject:"Disaster", message:complaintDescription }),
+            body: JSON.stringify({ latitude:latitude, longitude:longitude, subject:subject, message:complaintDescription }),
             credentials: "include"
         });
 
@@ -258,7 +260,13 @@ export default function UserProfile() {
             <h2 className="text-xl mb-4 text-white">Describe your issue</h2>
             <textarea
               className="w-full p-2 bg-gray-800 text-white rounded-md mb-4"
-              placeholder="Enter details..."
+              placeholder="Enter Subject..."
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+            <textarea
+              className="w-full p-2 bg-gray-800 text-white rounded-md mb-4"
+              placeholder="Enter Complaint..."
               value={complaintDescription}
               onChange={(e) => setComplaintDescription(e.target.value)}
             />

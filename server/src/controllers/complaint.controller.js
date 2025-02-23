@@ -12,24 +12,40 @@ const filecomplaint = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Error creating complaint");
     }
 
-    // Extract complaint image path (if provided)
-    const complaintImageLocalPath = req.files?.complaint?.[0]?.path || null;
+    const existedcomplaint = await Complaint.findOne({
+        complaint: complaint,
+        raisedBy: raisedBy
+    });
 
-    // Create a new complaint entry
-    const newComplaint = await Complaint.create({
+    if (existedcomplaint) {
+        throw new ApiError(409, "Complaint already exists");
+    }
+
+    const complaintImageLocalPath = req.files?.complaintImage?.[0]?.path;
+    if (!complaintImageLocalPath) {
+        throw new ApiError(400, "Complaint Image required");
+    }
+
+    const complaintImage = await uploaOnCloudinary(complaintImageLocalPath);
+    if (!complaintImage) {
+        throw new ApiError(400, "Complaint Image is required");
+    }
+
+    const newcomplaint = await Complaint.create({
         complaint,
         raisedBy,
         status: status || "pending",
         createdAt: new Date(),
-        complaintImage: complaintImageLocalPath || "No image provided",
+        complaintImage: complaintImage.response.url, // ✅ Image URL from Cloudinary
+        prediction: complaintImage.classification // ✅ Classification result
     });
 
-    if (!newComplaint) {
+    if (!newcomplaint) {
         throw new ApiError(400, "Error while creating new complaint");
     }
 
     res.status(201).json(
-        new ApiResponse(201, newComplaint, "New complaint lodged successfully")
+        new ApiResponse(201, newcomplaint, "New complaint lodged successfully")
     );
 });
 
