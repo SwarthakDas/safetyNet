@@ -1,7 +1,7 @@
 import mongoose,{Schema} from "mongoose";
 
 const complaintSchema=new Schema({
-    complain:{
+    complaint:{
         type:String,
         required:true,
     },
@@ -20,7 +20,8 @@ const complaintSchema=new Schema({
     },
     lastupdated:{
         type:Date,
-        required:true
+        required: true,
+        default: Date.now
     },
     complaintImage:{
         type:String //cloudinary url

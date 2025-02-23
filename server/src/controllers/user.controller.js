@@ -21,10 +21,10 @@ const generateAccessAndRefreshTokenUser=async(userID)=>{
 } 
 
 const registerUser=asyncHandler(async (req, res)=>{
-    const {fullname, email, username, password, latitude, longitude}=req.body
+    const {firstname,lastname, email, username, password, latitude, longitude}=req.body
     console.log("email: ",email);
    if(
-    [fullname, email, username, password].some((filed)=>filed?.trim()==="")
+    [firstname,lastname, email, username, password].some((filed)=>filed?.trim()==="")
    ){
     throw new ApiError(400,"All fields are required")
    }
@@ -63,7 +63,7 @@ const registerUser=asyncHandler(async (req, res)=>{
 const loginUser=asyncHandler(async(req,res)=>{
   const {email, username, password, latitude, longitude}= req.body
 
-  if(!username && !email){
+  if(!username || !email){
     throw new ApiError(400,"Username or Email required")
   }
   
@@ -143,7 +143,7 @@ const refreshAccessTokenUser=asyncHandler(async(req, res)=>{
   try {
     const decodedToken=jwt.verify(
       incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
+      process.env.REFRESH_TOKEN_SECRET_USER
     )
   
     const user=await User.findById(decodedToken?._id)
