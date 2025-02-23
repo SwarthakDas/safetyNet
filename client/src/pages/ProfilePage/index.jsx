@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import Cookies from 'js-cookie';
 
 export default function UserProfile() {
   const [complaints, setComplaints] = useState([]);
@@ -9,7 +11,8 @@ export default function UserProfile() {
   const [complaintDescription, setComplaintDescription] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [emergencies, setEmergencies] = useState([]);
-
+  const navigate=useNavigate()
+  console.log(Cookies.get("accessToken"))
   useEffect(() => {
     setComplaints([
       {
@@ -75,6 +78,24 @@ export default function UserProfile() {
     setSelectedImage(null);
   };
 
+  const logout=async()=>{
+    try {
+      const response=await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/department/logout`,
+        {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify()
+        }
+      )
+      if(response.ok){
+        console.log("user logged out")
+      }
+      navigate("/profile")
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center h-screen p-4">
       <img
@@ -95,8 +116,9 @@ export default function UserProfile() {
             Complaints
           </a>
         </nav>
-        <div className="w-40 h-8 rounded-full flex items-center justify-center">
+        <div className="w-40 h-8 rounded-full flex items-center justify-center gap-5">
           <CircleUser className="h-20" />
+          <button className="border p-2 rounded-xl" onClick={() => logout()}>Logout</button>
         </div>
       </div>
       

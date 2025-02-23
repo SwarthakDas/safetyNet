@@ -183,7 +183,7 @@ const onSubmit = async (data) => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`w-1/2 border-b-2 py-2 font-semibold ${role === "User" ? "border-gray-900" : "text-gray-500"}`}
+              className={`w-1/2 py-2 font-semibold ${role === "User" ? "border-gray-900 border-b-2" : "text-gray-500"}`}
               onClick={() => {setRole("User");reset()}}
             >
               User

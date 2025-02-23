@@ -1,22 +1,104 @@
 import { useForm } from "react-hook-form";
 import { motion} from "framer-motion";
 import { useNavigate } from "react-router-dom"
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import Cookies from 'js-cookie';
 
 export default function LoginPage() {
+  const [role, setRole] = useState("User");
+  const loginSchema = z.object({
+    email: z.string().email({message:"Invalid email address"}),
+    password:z.string().min(6,"atleast 6 characters"),
+  })
   const{
     register,
     handleSubmit,
     formState:{errors},
+    reset
   }=useForm({
+    resolver: zodResolver(loginSchema)
   })
   const navigate=useNavigate()
-  const onSubmit=async (data)=>{
-    try {
-      console.log(data)
-    } catch (error) {
-      console.error(error)
+  
+const [location, setLocation] = useState(null);
+
+const getLocation = () => {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = position.coords.latitude.toFixed(6);
+        const longitude = position.coords.longitude.toFixed(6);
+        setLocation({ latitude, longitude });
+        resolve({ latitude, longitude });
+      },
+      (err) => {
+        console.error(err);
+        reject(err);
+      }
+    );
+  });
+};
+
+const onSubmit = async (data) => {
+  try {
+
+    // Ensure location is set
+    let loc = location;
+    if (!loc) {
+      loc = await getLocation(); // Wait until location is fetched
     }
+    data.latitude = loc.latitude;
+    data.longitude = loc.longitude;
+
+    if(role!=="User"){
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/department/login`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(data)
+          }
+        )
+        if (response.ok) {
+          console.log("dept logged in")
+          // Let's check all cookies
+          console.log("All cookies:", document.cookie)
+          console.log("JS-Cookie accessToken:", Cookies.get("accessToken"))
+          
+          // Let's also check the response
+          const responseData = await response.json()
+          console.log("Response data:", responseData)
+        }
+      } catch (error) {
+        console.error("Error details:", error)
+      }
+    }
+    else{
+      try {
+        const response=await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/civilian/login`,
+          {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(data)
+          }
+        )
+        if(response.ok){
+          console.log("user loggedin")
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    navigate("/profile")
+    console.log("Data:", data);
+
+  } catch (error) {
+    console.error("Error:", error);
   }
+};
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-900 p-4">
@@ -72,6 +154,24 @@ export default function LoginPage() {
         >
           <h2 className="text-2xl font-semibold text-gray-900">Sign In</h2>
           <p className="text-gray-600">Welcome to SafetyNet</p>
+          <div className="mt-4 flex border-b">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`w-1/2  py-2 font-semibold ${role === "User" ? "border-gray-900 border-b-2" : "text-gray-500"}`}
+              onClick={() => {setRole("User");reset()}}
+            >
+              User
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`w-1/2 py-2 ${role === "Department" ? "border-b-2 border-gray-900" : "text-gray-500"}`}
+              onClick={() => {setRole("Department");reset()}}
+            >
+              Department
+            </motion.button>
+          </div>
           <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
             <input type="email" placeholder="Email" {...register("email")} className="w-full rounded border p-2" />
             <input type="password" placeholder="Password" {...register("password")} className="w-full rounded border p-2" />

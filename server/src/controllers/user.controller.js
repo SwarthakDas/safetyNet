@@ -73,7 +73,6 @@ const loginUser=asyncHandler(async(req,res)=>{
   if(!user){
     throw new ApiError(404, "User does not exist")
   }
-
   await User.findByIdAndUpdate(
     user._id,
     {
