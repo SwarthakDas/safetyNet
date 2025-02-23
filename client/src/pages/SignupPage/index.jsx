@@ -2,72 +2,109 @@ import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export default function SignupPage() {
-  const [role, setRole] = useState("User");
-  const navigate=useNavigate()
 
-  const{
-    register,
-    handleSubmit,
-    formState:{errors},
-    reset
-  }=useForm({})
-  const [location, setLocation] = useState(null);
+const userSchema = z.object({
+  username: z.string().min(6,"atleast 6 characters").max(30,"username can be upto 30 characters"),
+  email: z.string().email({message:"Invalid email address"}),
+  password:z.string().min(6,"atleast 6 characters"),
+  confirmPassword:z.string().min(6,"atleast 6 characters"),
+  firstName: z.string(),
+  lastName: z.string(),
+}).refine((data)=>data.password===data.confirmPassword,{
+  message:"Password do not match",
+  path: ["confirmPassword"]
+})
 
-  const getLocation = () => {
+const deptSchema = z.object({
+  departmentName: z.string(),
+  email: z.string().email({message:"Invalid email address"}),
+  password:z.string().min(6,"atleast 6 characters"),
+  confirmPassword:z.string().min(6,"atleast 6 characters"),
+  adminName: z.string(),
+  departmentRole: z.string(),
+}).refine((data)=>data.password===data.confirmPassword,{
+  message:"Password do not match",
+  path: ["confirmPassword"]
+})
 
+const [role, setRole] = useState("User");
+const navigate = useNavigate();
+
+const {
+  register,
+  handleSubmit,
+  formState: { errors },
+  reset,
+} = useForm({
+  resolver: zodResolver(role === "User" ? userSchema : deptSchema),
+});
+
+const [location, setLocation] = useState(null);
+
+const getLocation = () => {
+  return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const latitude = position.coords.latitude.toFixed(6);
         const longitude = position.coords.longitude.toFixed(6);
-
         setLocation({ latitude, longitude });
+        resolve({ latitude, longitude });
       },
       (err) => {
         console.error(err);
+        reject(err);
       }
     );
-  };
+  });
+};
 
-  const onSubmit = async (data) => {
-    try {
-      // Remove empty fields
-      delete data.confirmPassword
-      Object.keys(data).forEach((key) => {
-        if (data[key] === "") {
-          delete data[key];
-        }
-      });
-  
-      // Ensure location is set
-      if (!location) {
-        getLocation();
-        setTimeout(() => {
-          if (location) {
-            data.latitude = location.latitude;
-            data.longitude = location.longitude;
-            console.log("Data:", data);
-          } else {
-            console.error("Location not retrieved yet.");
-          }
-        }, 1000);
-      } else {
-        data.latitude = location.latitude;
-        data.longitude = location.longitude;
-        if(role==="User")console.log("role is user");
-        else console.log("role is dept");
-        console.log("Data:", data);
+const onSubmit = async (data) => {
+  try {
+    // Remove empty fields
+    delete data.confirmPassword;
+    Object.keys(data).forEach((key) => {
+      if (data[key] === "") {
+        delete data[key];
       }
-    } catch (error) {
-      console.error("Error:", error);
+    });
+
+    // Ensure location is set
+    let loc = location;
+    if (!loc) {
+      loc = await getLocation(); // Wait until location is fetched
     }
-  };
-  
-  
-  
-  
-  
+    data.latitude = loc.latitude;
+    data.longitude = loc.longitude;
+
+    if(role!=="User"){
+      try {
+        delete data.confirmPassword
+        const response=await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/register`,
+          {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(data)
+          }
+        )
+        if(response.ok){
+          console.log("department registered")
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }
+   
+
+    console.log("Data:", data);
+
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-900 p-4">
@@ -94,7 +131,7 @@ export default function SignupPage() {
           
           <div className="relative z-10 flex flex-col items-center justify-center h-full">
           <img
-            src="/signup_box.jpg"
+            src="/signup_box.png"
             alt="Background"
             className="absolute inset-0 h-full w-full object-cover rounded-xl hover:blur-[2px] duration-500"
           />
@@ -183,12 +220,12 @@ export default function SignupPage() {
             {errors.email && <p>{errors.email.message}</p>}
             <input type="password" placeholder="Password" {...register("password")} className="w-full rounded border p-2" />
             {errors.password && <p>{errors.password.message}</p>}
-            <input type="confirmPassword" placeholder="Confirm Password" {...register("confirmPassword")} className="w-full rounded border p-2" />
+            <input type="password" placeholder="Confirm Password" {...register("confirmPassword")} className="w-full rounded border p-2" />
             {errors.confirmPassword && <p>{errors.confirmPassword.message}</p>}
             <motion.button type="submit"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-full rounded bg-gray-900 p-2 text-white hover:bg-gray-700"
+              className="w-full rounded-lg bg-gray-900 p-2 text-white hover:bg-gray-700"
             >
               Create Account
             </motion.button>

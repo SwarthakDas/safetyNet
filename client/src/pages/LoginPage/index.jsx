@@ -23,7 +23,7 @@ export default function LoginPage() {
       <img
             src="/signup_bg.jpg"
             alt="Background"
-            className="absolute inset-0 h-full w-full object-cover opacity-80"
+            className="absolute inset-0 h-full w-full object-cover opacity-80 "
             
           />
       <motion.div
@@ -43,7 +43,7 @@ export default function LoginPage() {
           
           <div className="relative z-10 flex flex-col items-center justify-center h-full">
           <img
-            src="/signup_box.jpg"
+            src="/signup_box.png"
             alt="Background"
             className="absolute inset-0 h-full w-full object-cover rounded-xl hover:blur-[2px] duration-500"
           />
@@ -79,7 +79,7 @@ export default function LoginPage() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-full rounded bg-gray-900 p-2 text-white hover:bg-gray-700"
+              className="w-full rounded-lg bg-gray-900 p-2 text-white hover:bg-gray-700"
             >
               Login
             </motion.button>

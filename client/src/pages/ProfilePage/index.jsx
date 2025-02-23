@@ -1,347 +1,208 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { CircleUser } from "lucide-react";
 
-export default function Dashboard() {
-  const getPlaceName = async (latitude, longitude) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-      );
-      const data = await response.json();
-      return data.display_name || "Location name not found.";
-    } catch (err) {
-      console.error(err);
-      return "Error fetching place name.";
-    }
-  };
-
-  const [emergencies, setEmergencies] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [activeTab, setActiveTab] = useState("emergencies");
+export default function UserProfile() {
+  const [complaints, setComplaints] = useState([]);
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [description, setDescription] = useState("");
-  const [selectedEmergency, setSelectedEmergency] = useState(null);
-  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [complaintDescription, setComplaintDescription] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [emergencies, setEmergencies] = useState([]);
 
   useEffect(() => {
-    const fetchLocation = async () => {
-      const defaultEmergencies = [
-        {
-          id: 1,
-          raisedBy: "John Doe",
-          location: await getPlaceName(22.574743, 88.363892),
-          status: "pending",
-          description: "Fire outbreak at an apartment",
-          time: "2025-02-22 14:30",
-          requestType: "Emergency",
-        },
-        {
-          id: 2,
-          raisedBy: "Alice Smith",
-          location: "Los Angeles, CA",
-          status: "resolved",
-          description: "Road accident near downtown",
-          time: "2025-02-21 10:15",
-          requestType: "Alert",
-        },
-      ];
-      setEmergencies(defaultEmergencies);
-    };
-
-    fetchLocation();
-  }, []);
-
-  useEffect(() => {
-    setHistory([
+    setComplaints([
       {
         id: 1,
-        raisedBy: "David Johnson",
-        location: "Houston, TX",
-        status: "resolved",
-        description: "Fire rescue",
-        time: "2025-02-19 08:45",
-        requestType: "Emergency",
+        description: "Faulty product received",
+        status: "pending",
+        createdAt: "2025-02-20 10:30",
+        location: "New York, NY",
       },
       {
         id: 2,
-        raisedBy: "Michael Lee",
-        location: "Miami, FL",
+        description: "Late delivery",
         status: "resolved",
-        description: "Medical emergency",
-        time: "2025-02-18 12:30",
-        requestType: "Emergency",
+        createdAt: "2025-02-18 14:45",
+        location: "Los Angeles, CA",
+      },
+    ]);
+    
+    setEmergencies([
+      {
+        id: 1,
+        raisedBy: "John Doe",
+        status: "active",
+        createdAt: "2025-02-19 08:00",
+        location: "New York, NY",
+      },
+      {
+        id: 2,
+        raisedBy: "Jane Smith",
+        status: "resolved",
+        createdAt: "2025-02-18 16:30",
+        location: "New York, NY",
+      },
+      {
+        id: 2,
+        raisedBy: "Jane Smith",
+        status: "resolved",
+        createdAt: "2025-02-18 16:30",
+        location: "New York, NY",
+      },
+      {
+        id: 2,
+        raisedBy: "Jane Smith",
+        status: "resolved",
+        createdAt: "2025-02-18 16:30",
+        location: "New York, NY",
       },
     ]);
   }, []);
 
-  const handleEmergencySubmit = async (requestType) => {
-    const newEmergency = {
-      id: emergencies.length + 1,
-      raisedBy: "You",
-      location: "Fetching location...",
+  const handleComplaintSubmit = () => {
+    const newComplaint = {
+      id: complaints.length + 1,
+      description: complaintDescription,
       status: "pending",
-      description: description || "Unknown emergency",
-      time: new Date().toLocaleString(),
-      requestType: requestType,
+      createdAt: new Date().toLocaleString(),
+      location: "Current Location",
     };
 
-    setEmergencies([newEmergency, ...emergencies]);
+    setComplaints([newComplaint, ...complaints]);
     setIsModalOpen(false);
-    setDescription("");
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-        const place = await getPlaceName(latitude, longitude);
-        setEmergencies((prev) =>
-          prev.map((e) => (e.id === newEmergency.id ? { ...e, location: place } : e))
-        );
-      },
-      (err) => {
-        console.error("Location access denied", err);
-        setEmergencies((prev) =>
-          prev.map((e) =>
-            e.id === newEmergency.id ? { ...e, location: "Location access denied" } : e
-          )
-        );
-      }
-    );
-  };
-
-  const handleEmergencyAction = (action) => {
-    if (!selectedEmergency) return;
-
-    let updatedStatus;
-    switch (action) {
-      case 'accept':
-        updatedStatus = 'in-progress';
-        break;
-      case 'resolve':
-        updatedStatus = 'resolved';
-        break;
-      case 'reject':
-        updatedStatus = 'rejected';
-        break;
-      default:
-        updatedStatus = selectedEmergency.status;
-    }
-
-    setEmergencies(prev =>
-      prev.map(e =>
-        e.id === selectedEmergency.id
-          ? { ...e, status: updatedStatus }
-          : e
-      )
-    );
-
-    if (updatedStatus === 'resolved') {
-      setHistory(prev => [{ ...selectedEmergency, status: updatedStatus }, ...prev]);
-      setEmergencies(prev => prev.filter(e => e.id !== selectedEmergency.id));
-    }
-
-    setIsActionModalOpen(false);
-    setSelectedEmergency(null);
+    setComplaintDescription("");
+    setSelectedImage(null);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8 flex items-center flex-col">
-        <div className="bg-gray-50 w-full flex items-center sm:p-4 p-2 sm:px-10 justify-between mx-10 rounded-2xl sm:text-lg font-semibold text-gray-600">
-            <p>Welcome, User</p>
-            <button className="border p-1 sm:p-2 rounded-sm sm:rounded-xl">Log Out</button>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center h-screen p-4">
+      <img
+        src="/signup_bg.jpg"
+        alt="Background"
+        className="absolute inset-0 h-full w-full object-cover opacity-20  pointer-events-none"
+      />
+      <div className="absolute top-0 w-full flex justify-between items-center px-10 py-5">
+        <h1 className="text-4xl font-semibold">SafetyNet</h1>
+        <nav className="flex gap-6">
+          <a href="#" className="hover:border hover:rounded-2xl p-2 px-4 w-40 text-center" onClick={() => setActiveTab("dashboard")}>
+            Dashboard
+          </a>
+          <a href="#" className="hover:border border-red-500 hover:text-red-500 hover:rounded-2xl p-2 px-4 w-40 text-center" onClick={() => setActiveTab("emergency")}>
+            Emergencies
+          </a>
+          <a href="#" className="hover:border border-yellow-400 hover:text-yellow-500 hover:rounded-2xl p-2 px-4 w-40 text-center" onClick={() => setActiveTab("complaints")}>
+            Complaints
+          </a>
+        </nav>
+        <div className="w-40 h-8 rounded-full flex items-center justify-center">
+          <CircleUser className="h-20" />
         </div>
-      <h1 className="sm:text-4xl text-2xl mt-2 font-bold mb-8 text-center text-blue-600">Emergency Dashboard</h1>
-
-      <motion.button
-        className="w-auto bg-red-600 text-white font-bold py-4 px-6 rounded-lg mb-8 text-xl hover:bg-red-700 transition-colors"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsModalOpen(true)}
-      >
-        Issue Emergency
-      </motion.button>
-
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Issue Emergency</h2>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <input
-                type="text"
-                placeholder="Describe the emergency..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-4">
-                <button
-                  onClick={() => handleEmergencySubmit("Emergency")}
-                  className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Emergency
-                </button>
-                <button
-                  onClick={() => handleEmergencySubmit("Alert")}
-                  className="w-full py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-                >
-                  Alert
-                </button>
-              </div>
-            </motion.div>
+      </div>
+      
+      <div className="flex flex-col justify-center w-full">
+        {activeTab === "dashboard" && (
+          <>
+          <motion.h2 className="text-center text-2xl sm:text-3xl font-semibold px-6" initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 1 }}>
+            Your Safety, Your Control – Empowering You to Act When It Matters Most!
+          </motion.h2>
+          <div className="mt-10 flex gap-10 justify-center">
+            {[
+              { value: 100, label: "Complaints Resolved" },
+              { value: 175, label: "Emergencies Answered" },
+              { value: "150+", label: "Satisfied Clients" },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + index * 0.3 }}
+              >
+                <h3 className="text-4xl font-bold">{stat.value}</h3>
+                <p className="text-white">{stat.label}</p>
+              </motion.div>
+            ))}
           </div>
+          </>
         )}
 
-        {isActionModalOpen && selectedEmergency && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Emergency Action</h2>
-                <button
-                  onClick={() => {
-                    setIsActionModalOpen(false);
-                    setSelectedEmergency(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <p className="font-semibold">{selectedEmergency.location}</p>
-                <p className="text-gray-600">{selectedEmergency.description}</p>
-                <p className="text-gray-600">Type: {selectedEmergency.requestType}</p>
-                <p className="text-gray-600">Status: {selectedEmergency.status}</p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleEmergencyAction('accept')}
-                  className="flex-1 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => handleEmergencyAction('resolve')}
-                  className="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                >
-                  Resolve
-                </button>
-                <button
-                  onClick={() => handleEmergencyAction('reject')}
-                  className="flex-1 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Reject
-                </button>
-              </div>
-            </motion.div>
+{activeTab === "emergency" && (
+  <>
+          <div className="mt-10 overflow-y-auto max-h-70 p-4 rounded-lg items-center flex flex-col">
+            {emergencies.map((emergency, i) => (
+              <motion.div key={i} className="p-6 bg-gray-900 text-white rounded-md mb-2 w-3/4 " initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+                <p><strong>Raised By:</strong> {emergency.raisedBy}</p>
+                <p><strong>Status:</strong> {emergency.status}</p>
+                <div className="flex justify-between">
+                  <p><strong>Created At:</strong> {emergency.createdAt}</p>
+                  <p><strong>Location:</strong> {emergency.location}</p>
+                </div>
+              </motion.div>
+            ))}
+            
           </div>
+          <div className="flex justify-center mt-4">
+            <button onClick={() => setIsModalOpen(true)} className="bg-red-600 text-white px-6 py-2 rounded-lg">
+              Raise Emergency
+            </button>
+          </div>
+        </>
         )}
-      </AnimatePresence>
 
-      <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-4xl">
-        <div className="flex mb-4">
-          <button
-            className={`mr-4 px-4 py-2 rounded-md transition-colors ${
-              activeTab === "emergencies" ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"
-            }`}
-            onClick={() => setActiveTab("emergencies")}
-          >
-            Current Emergencies
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md transition-colors ${
-              activeTab === "history" ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"
-            }`}
-            onClick={() => setActiveTab("history")}
-          >
-            Past Helped History
+        {activeTab === "complaints" && (
+          <>
+          <div className="mt-10 overflow-y-auto max-h-70 p-4 rounded-lg items-center flex flex-col">
+            {complaints.map((complaint, i) => (
+              <motion.div key={i} className="p-6 bg-gray-900 text-white rounded-md mb-2 w-1/2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+                <p><strong>Description:</strong> {complaint.description}</p>
+                <p><strong>Status:</strong> {complaint.status}</p>
+                <div className="flex justify-between">
+                  <p><strong>Created At:</strong> {complaint.createdAt}</p>
+                  <p><strong>Location:</strong> {complaint.location}</p>
+                </div>
+              </motion.div>
+            ))}
+            {/* Added Button */}
+            <button onClick={() => setIsModalOpen(true)} className="mt-4 bg-yellow-500 text-black px-6 py-2 rounded-lg">
+              File Complaint
+            </button>
+          </div>
+          <div className="flex justify-center mt-4">
+          <button onClick={() => setIsModalOpen(true)} className="bg-yellow-500 text-white px-6 py-2 rounded-lg">
+            Raise Complaint
           </button>
         </div>
+        </>
+        )}
 
-        <AnimatePresence mode="wait">
-          {activeTab === "emergencies" && (
-            <motion.ul
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {emergencies.map((emergency) => (
-                <motion.li
-                  key={emergency.id}
-                  className="border-b border-gray-200 py-4 cursor-pointer hover:bg-gray-50"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  onClick={() => {
-                    setSelectedEmergency(emergency);
-                    setIsActionModalOpen(true);
-                  }}
-                >
-                  <div className="flex justify-between items-center mb-2 w-full gap-10">
-                    <span className="sm:text-lg font-semibold">{emergency.location}</span>
-                    <span className="text-gray-600">{emergency.time}</span>
-                  </div>
-                  <p className="text-gray-700">Raised by: {emergency.raisedBy}</p>
-                  <p className="text-gray-700">Status: {emergency.status}</p>
-                  <p className="text-gray-700">Type: {emergency.requestType}</p>
-                  <p className="text-gray-700">{emergency.description}</p>
-                </motion.li>
-              ))}
-            </motion.ul>
-          )}
-
-          {activeTab === "history" && (
-            <motion.ul
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {history.map((item) => (
-                <motion.li
-                  key={item.id}
-                  className="border-b border-gray-200 py-4"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-lg font-semibold">{item.location}</span>
-                    <span className="text-gray-600">{item.time}</span>
-                  </div>
-                  <p className="text-gray-700">Raised by: {item.raisedBy}</p>
-                  <p className="text-gray-700">Status: {item.status}</p>
-                  <p className="text-gray-700">Type: {item.requestType}</p>
-                  <p className="text-gray-700">{item.description}</p>
-                </motion.li>
-              ))}
-            </motion.ul>
-          )}
-        </AnimatePresence>
+{isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-gray-900 p-6 rounded-lg w-96">
+            <h2 className="text-xl mb-4 text-white">Describe your issue</h2>
+            <textarea
+              className="w-full p-2 bg-gray-800 text-white rounded-md mb-4"
+              placeholder="Enter details..."
+              value={complaintDescription}
+              onChange={(e) => setComplaintDescription(e.target.value)}
+            />
+            <input
+              type="file"
+              accept="image/*"
+              className="mb-4"
+              onChange={(e) => setSelectedImage(e.target.files[0])}
+            />
+            <div className="flex justify-between">
+              <button onClick={handleComplaintSubmit} className="bg-green-600 text-white px-4 py-2 rounded-md">
+                Submit
+              </button>
+              <button onClick={() => setIsModalOpen(false)} className="bg-red-600 text-white px-4 py-2 rounded-md">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
