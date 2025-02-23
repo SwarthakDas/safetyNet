@@ -21,10 +21,10 @@ const generateAccessAndRefreshTokenDept=async(DepartmentID)=>{
 } 
 
 const registerDepartment=asyncHandler(async (req, res)=>{
-    const {fullname, email, Departmentname, password, latitude, longitude}=req.body
+    const {email, departmentname,adminname, password, latitude, longitude}=req.body
     console.log("email: ",email);
    if(
-    [fullname, email, Departmentname, password].some((filed)=>filed?.trim()==="")
+    [adminname, email, departmentname, password].some((filed)=>filed?.trim()==="")
    ){
     throw new ApiError(400,"All fields are required")
    }
@@ -32,108 +32,105 @@ const registerDepartment=asyncHandler(async (req, res)=>{
     throw new ApiError(400,"Location access required")
    }
    const existerDepartment=await Department.findOne({
-    $or: [{Departmentname}, {email}]
+    $or: [{ departmentname: departmentname.toLowerCase() }, {email}]
    })
    if(existerDepartment){
     throw new ApiError(409, "Department with email or Departmentname already exited")
    }
    
-   const Department=await Department.create({
-        Departmentname:Departmentname.toLowerCase(),
-        email,
-        firstname,
-        lastname,
-        password,
-        location:{
-            latitude:latitude||"",
-            longitude:longitude||""
-        } 
-   })
-
-   const createdDepartment=await Department.findById(Department._id).select("-password -refreshToken")
-   if(!createdDepartment){
+   const newDepartment=await Department.create({
+    departmentname:departmentname.toLowerCase(),
+    email,
+    password,
+    adminname,
+    location:{
+        latitude:latitude||"",
+        longitude:longitude||""
+    } 
+  })
+  if(!newDepartment){
     throw new ApiError(500, "Something went wrong while creating Department")
    }
-
    return res.status(201).json(
-    new ApiResponse(200, createdDepartment, "Department registered Successfully")
+    new ApiResponse(200, newDepartment, "Department registered Successfully")
    )
 })
 
-const loginDepartment=asyncHandler(async(req,res)=>{
-  const {email, Departmentname, password, latitude, longitude}= req.body
+const loginDepartment = asyncHandler(async (req, res) => {
+  const { email, departmentname, password, latitude, longitude } = req.body;
 
-  if(!Departmentname && !email){
-    throw new ApiError(400,"Departmentname or Email required")
+  if (!departmentname && !email) {
+      throw new ApiError(400, "Department name or Email required");
   }
-  
-  const Department=await Department.findOne({
-    $or: [{Departmentname}, {email}]
-  })
-  if(!Department){
-    throw new ApiError(404, "Department does not exist")
+
+  const department = await Department.findOne({
+      $or: [{ departmentname: departmentname?.toLowerCase() }, { email }],
+  });
+
+  if (!department) {
+      throw new ApiError(404, "Department does not exist");
+  }
+
+  const isPasswordValid = await department.isPasswordCorrect(password);
+  if (!isPasswordValid) {
+      throw new ApiError(401, "Invalid Department credentials");
+  }
+
+  if (latitude && longitude) {
+      department.location.latitude = latitude;
+      department.location.longitude = longitude;
+      await department.save();
+  }
+
+  const accessToken = department.generateAccessToken();
+  const refreshToken = department.generateRefreshToken();
+
+  department.refreshToken = refreshToken;
+  await department.save();
+
+  const loggedInDepartment = await Department.findById(department._id).select("-password -refreshToken");
+
+  const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+  };
+
+  return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+          new ApiResponse(
+              200,
+              { department: loggedInDepartment, accessToken, refreshToken },
+              "Department logged in successfully"
+          )
+      );
+});
+
+const logoutDepartment = asyncHandler(async (req, res) => {
+  if (!req.department) {
+    throw new ApiError(401, "Unauthorized request: Department not found");
   }
 
   await Department.findByIdAndUpdate(
-    Department._id,
-    {
-        $set: { 
-            "location.latitude": latitude, 
-            "location.longitude": longitude 
-        }
-    },
-    { new: true, runValidators: true }
+    req.department._id,  // ✅ Corrected reference
+    { $set: { refreshToken: undefined } },
+    { new: true }
   );
-  const isPasswordValid=await Department.isPasswordCorrect(password)
-  if(!isPasswordValid){
-    throw new ApiError(401, "Invalid Department credentials")
-  }
 
-  const {accessToken, refreshToken}= await generateAccessAndRefreshTokenDept(Department._id)
-
-  const loggedInDepartment=await Department.findById(Department._id).select("-password -refreshToken")
-
-  const options={
+  const options = {
     httpOnly: true,
-    secure: true
-  }
+    secure: true,
+  };
 
-  return res.status(200)
-  .cookie("accessToken", accessToken, options)
-  .cookie("refreshToken", refreshToken, options)
-  .json(
-    new ApiResponse(
-      200,
-      {
-        Department: loggedInDepartment, accessToken, refreshToken
-      },
-      "Department logged in succesfully"
-    )
-  )
-})
-
-const logoutDepartment=asyncHandler(async(req, res)=>{
-  await Department.findByIdAndUpdate(
-    req.Department._id,
-    {
-      $set:{
-        refreshToken: undefined
-      }
-    },
-    {
-      new: true
-    }
-  )
-  const options={
-    httpOnly: true,
-    secure: true
-  }
-  
-  return res.status(200)
-  .clearCookie("accessToken", options)
-  .clearCookie("refreshToken", options)
-  .json(new ApiResponse(200,{},"Department logged out successfully"))
-})
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "Department logged out successfully"));
+});
 
 const refreshAccessTokendept=asyncHandler(async(req, res)=>{
   const incomingRefreshToken=req.cookies.refreshToken || req.body.refreshToken//what is this req.body.refreshtoken?

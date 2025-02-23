@@ -5,17 +5,19 @@ import { uploaOnCloudinary } from "../utils/Cloudinary.js";
 import { Complaint } from "../models/complain.model.js";
 
 const filecomplaint=asyncHandler(async(req,res)=>{
-    const{complaint,raisedBy,status}=req.body
+    const{complaint,status}=req.body
+    const raisedBy = req.user._id;
     if(!complaint && !raisedBy){
         throw new ApiError(400,"Error creating complaint")
     }
-    const existedcomplaint=complaint.findOne({
-        $and:[{complaint},{raisedBy}]
+    const existedcomplaint=await Complaint.findOne({
+        complaint: complaint,  // Ensure correct field reference
+        raisedBy: raisedBy
     })
     if(existedcomplaint){
         throw new ApiError(409,"complaint already exists")
     }
-    const complaintImageLocalPath=req.files?.complaintImage[0]?.complaintImageLocalPath
+    const complaintImageLocalPath = req.files?.complaintImage?.[0]?.path;
     if(!complaintImageLocalPath){
         throw new ApiError(400,"complaint Image required")
     }
@@ -23,10 +25,10 @@ const filecomplaint=asyncHandler(async(req,res)=>{
     if(!complaintImage){
         throw new ApiError(400,"complaint Image is required")
     }
-    const newcomplaint=await complaint.create({
+    const newcomplaint=await Complaint.create({
         complaint,
         raisedBy,
-        status,
+        status: status || "pending",
         createdAt:new Date(),
         complaintImage:complaintImage.url
     })
@@ -41,11 +43,11 @@ const filecomplaint=asyncHandler(async(req,res)=>{
 const updatecomplaint=asyncHandler(async(req,res)=>{
     const {id}=req.params;
         const {currstatus}=req.body;
-        const complaintid=await complaint.findById(id)
+        const complaintid=await Complaint.findById(id)
         if(!complaintid){
             throw new ApiError(404,"No such complaint exists")
         }
-        const updated_complaint=await complaint.findByIdAndUpdate(
+        const updated_complaint=await Complaint.findByIdAndUpdate(
             id,
             {
                 $set:{

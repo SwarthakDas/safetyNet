@@ -8,11 +8,6 @@ const departmentSchema=new Schema(
             type:String,
             required: true,
         },
-        role: { 
-            type: String, 
-            enum: ["fire_official", "police_official"], 
-            required: true 
-        },
         email:{
             type:String,
             required: true,
@@ -23,7 +18,6 @@ const departmentSchema=new Schema(
         adminname:{
             type:String,
             required: true,
-            unique: true,
             trim:true,
             index:true
         },
@@ -33,7 +27,6 @@ const departmentSchema=new Schema(
         },
         address:{
             type:String,
-            required:true
         },
         refreshToken:{
             type:String
@@ -63,31 +56,32 @@ departmentSchema.methods.isPasswordCorrect=async function(password){
     return await bcrypt.compare(password, this.password)
 }
 
-departmentSchema.methods.generateAccessToken=function(){
-    return jwt.sign({
-        _id:this._id,
-        email:this.email,
-        username:this.username,
-        fullname:this.fullname
-    },
-    process.env.ACCESS_TOKEN_SECRET_DEPT,
-    {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRY_DEPT
-    }
-)
-}
-departmentSchema.methods.generateRefreshToken=function(){
-    return jwt.sign({
-        _id:this._id,
-        email:this.email,
-        username:this.username,
-        fullname:this.fullname
-    },
-    process.env.REFRESH_TOKEN_SECRET_DEPT,
-    {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRY
-    }
-)
-}
+departmentSchema.methods.generateAccessToken = function () {
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            adminname: this.adminname 
+        },
+        process.env.ACCESS_TOKEN_SECRET_DEPT,
+        {
+            expiresIn: String(process.env.ACCESS_TOKEN_EXPIRY_DEPT)
+        }
+    );
+};
+
+departmentSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            adminname: this.adminname
+        },
+        process.env.REFRESH_TOKEN_SECRET_DEPT,
+        {
+            expiresIn: String(process.env.REFRESH_TOKEN_EXPIRY_DEPT)
+        }
+    );
+};
 
 export const Department=mongoose.model("Department",departmentSchema)
