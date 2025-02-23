@@ -25,6 +25,13 @@ const complaintSchema=new Schema({
     },
     complaintImage:{
         type:String //cloudinary url
+    },
+    prediction:{
+        type:String,
+        enum:[
+            "earthquake", "human_damage", "land_slide", "riot", 
+            "road_accident", "urban_fire", "water_disaster", "wild_fire"
+        ]
     }
 })
 

@@ -45,7 +45,7 @@ export const sendEmergencyEmail = asyncHandler(async (req, res) => {
     const emailPromises = nearbyDepartments.map(async (dept) => {
         try {
             const response = await resend.emails.send({
-                from: 'onboarding@resend.dev',  // Replace with a verified sender email
+                from: 'onboarding@resend.dev',
                 to: 'modandrandom@gmail.com',
                 subject: `Emergency Issued Near You - ${subject}`,
                 html: `

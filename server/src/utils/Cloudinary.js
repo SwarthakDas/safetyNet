@@ -51,11 +51,11 @@ const classifyImage = async (imageUrl) => {
             return "unknown";
         }
 
-        return JSON.parse(rawText).prediction || "unknown";
+        const parsedResponse = JSON.parse(rawText);
+        return Array.isArray(parsedResponse) ? parsedResponse[0] : "unknown"; // ✅ Extract first element
     } catch (error) {
         console.error("Error in classification:", error);
         return "unknown";
     }
 };
-
 export { uploaOnCloudinary };

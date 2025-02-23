@@ -4,41 +4,51 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploaOnCloudinary } from "../utils/Cloudinary.js";
 import { Complaint } from "../models/complain.model.js";
 
-const filecomplaint=asyncHandler(async(req,res)=>{
-    const{complaint,status}=req.body
+const filecomplaint = asyncHandler(async (req, res) => {
+    const { complaint, status } = req.body;
     const raisedBy = req.user._id;
-    if(!complaint && !raisedBy){
-        throw new ApiError(400,"Error creating complaint")
+
+    if (!complaint || !raisedBy) {
+        throw new ApiError(400, "Error creating complaint");
     }
-    const existedcomplaint=await Complaint.findOne({
-        complaint: complaint,  // Ensure correct field reference
+
+    const existedcomplaint = await Complaint.findOne({
+        complaint: complaint,
         raisedBy: raisedBy
-    })
-    if(existedcomplaint){
-        throw new ApiError(409,"complaint already exists")
+    });
+
+    if (existedcomplaint) {
+        throw new ApiError(409, "Complaint already exists");
     }
+
     const complaintImageLocalPath = req.files?.complaintImage?.[0]?.path;
-    if(!complaintImageLocalPath){
-        throw new ApiError(400,"complaint Image required")
+    if (!complaintImageLocalPath) {
+        throw new ApiError(400, "Complaint Image required");
     }
-    const complaintImage=await uploaOnCloudinary(complaintImageLocalPath)
-    if(!complaintImage){
-        throw new ApiError(400,"complaint Image is required")
+
+    const complaintImage = await uploaOnCloudinary(complaintImageLocalPath);
+    if (!complaintImage) {
+        throw new ApiError(400, "Complaint Image is required");
     }
-    const newcomplaint=await Complaint.create({
+
+    const newcomplaint = await Complaint.create({
         complaint,
         raisedBy,
         status: status || "pending",
-        createdAt:new Date(),
-        complaintImage:complaintImage.url
-    })
-    if(!newcomplaint){
-        throw new ApiError(400,"Error while creating new complaint")
-    } 
+        createdAt: new Date(),
+        complaintImage: complaintImage.response.url, // ✅ Image URL from Cloudinary
+        prediction: complaintImage.classification // ✅ Classification result
+    });
+
+    if (!newcomplaint) {
+        throw new ApiError(400, "Error while creating new complaint");
+    }
+
     res.status(201).json(
         new ApiResponse(201, newcomplaint, "New complaint lodged successfully")
-    )
-})
+    );
+});
+
 
 const updatecomplaint=asyncHandler(async(req,res)=>{
     const {id}=req.params;
