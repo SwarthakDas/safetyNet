@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Cookies from 'js-cookie';
+import { useSelector } from "react-redux";
+import { useCookies } from "react-cookie";
 
 export default function UserProfile() {
   const [complaints, setComplaints] = useState([]);
@@ -12,7 +13,11 @@ export default function UserProfile() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [emergencies, setEmergencies] = useState([]);
   const navigate=useNavigate()
-  console.log(Cookies.get("accessToken"))
+  const [loggedin,setLoggedin]=useState(true)
+  const {id,accessToken}=useSelector((state)=>state.auth)
+
+
+
   useEffect(() => {
     setComplaints([
       {
@@ -78,23 +83,34 @@ export default function UserProfile() {
     setSelectedImage(null);
   };
 
-  const logout=async()=>{
+  // const [cookies, setCookie, removeCookie] = useCookies(["accessToken"]);
+
+  const logout = async () => {
     try {
-      const response=await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/department/logout`,
-        {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify()
-        }
-      )
-      if(response.ok){
-        console.log("user logged out")
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/department/logout`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}` // ✅ Attach token from cookies
+        },
+        credentials: "include", // ✅ Ensures cookies are sent with the request
+    });
+    
+  
+      if (response.ok) {
+        // Remove the token from cookies
+        // removeCookie("accessToken", { path: "/" });
+        // removeCookie("refreshToken", { path: "/" });
+  
+        console.log("User logged out successfully");
+        navigate("/profile");
+      } else {
+        console.error("Logout failed:", await response.text());
       }
-      navigate("/profile")
     } catch (error) {
-      console.error(error)
+      console.error("Logout error:", error);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center h-screen p-4">
@@ -118,7 +134,7 @@ export default function UserProfile() {
         </nav>
         <div className="w-40 h-8 rounded-full flex items-center justify-center gap-5">
           <CircleUser className="h-20" />
-          <button className="border p-2 rounded-xl" onClick={() => logout()}>Logout</button>
+          <button className="border p-2 rounded-xl" onClick={() => logout()}>{loggedin?"Log Out":"Login"}</button>
         </div>
       </div>
       
@@ -192,7 +208,7 @@ export default function UserProfile() {
           </div>
           <div className="flex justify-center mt-4">
           <button onClick={() => setIsModalOpen(true)} className="bg-yellow-500 text-white px-6 py-2 rounded-lg">
-            Raise Complaint
+            Resolve Complaint
           </button>
         </div>
         </>

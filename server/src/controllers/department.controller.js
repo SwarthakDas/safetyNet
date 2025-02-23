@@ -57,14 +57,14 @@ const registerDepartment=asyncHandler(async (req, res)=>{
 })
 
 const loginDepartment = asyncHandler(async (req, res) => {
-  const { email, departmentname, password, latitude, longitude } = req.body;
+  const { email, password, latitude, longitude } = req.body;
 
-  if (!departmentname && !email) {
+  if (!email) {
       throw new ApiError(400, "Department name or Email required");
   }
 
   const department = await Department.findOne({
-      $or: [{ departmentname: departmentname?.toLowerCase() }, { email }],
+      $or: [{ email }],
   });
 
   if (!department) {

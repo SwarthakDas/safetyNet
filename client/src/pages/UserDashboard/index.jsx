@@ -1,167 +1,225 @@
-"use client"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { CircleUser } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+export default function UserProfile() {
+  const [complaints, setComplaints] = useState([]);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [complaintDescription, setComplaintDescription] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const navigate=useNavigate()
+  const [loggedin,setLoggedin]=useState(true)
+  const {id,accessToken}=useSelector((state)=>state.auth)
 
-export default function UserDashboard() {
-  const [complaints, setComplaints] = useState([])
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [complaintDescription, setComplaintDescription] = useState("")
-  const [selectedImage, setSelectedImage] = useState(null)
 
   useEffect(() => {
-    // Simulating fetching past complaints
     setComplaints([
       {
         id: 1,
         description: "Faulty product received",
-        status: "PENDING",
+        status: "pending",
         createdAt: "2025-02-20 10:30",
         location: "New York, NY",
       },
       {
         id: 2,
         description: "Late delivery",
-        status: "RESOLVED",
+        status: "resolved",
         createdAt: "2025-02-18 14:45",
         location: "Los Angeles, CA",
       },
-    ])
-  }, [])
+    ]);
+  }, []);
 
-  const handleComplaintSubmit = () => {
-    const newComplaint = {
-      id: complaints.length + 1,
-      description: complaintDescription,
-      status: "PENDING",
-      createdAt: new Date().toLocaleString(),
-      location: "Current Location", // In a real app, you'd use geolocation here
+
+
+  const handleComplaintSubmit = async () => {
+    if (!complaintDescription) {
+        console.error("Complaint description is required");
+        return;
     }
 
-    setComplaints([newComplaint, ...complaints])
-    setIsModalOpen(false)
-    setComplaintDescription("")
-    setSelectedImage(null)
-  }
+    const formData = new FormData();
+    formData.append("complaint", complaintDescription); // ✅ Complaint text
+    formData.append("status", "pending"); // ✅ Default status
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => setSelectedImage(e.target.result)
-      reader.readAsDataURL(file)
+   
+
+    try {
+        const response = await fetch(
+            `${import.meta.env.VITE_BACKEND_BASEURL}/civilian/profile/raise-complaint`,
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`,
+                },
+                credentials: "include",
+                body: formData, // ✅ Sending FormData
+            }
+        );
+
+        if (response.ok) {
+            console.log("Complaint made successfully");
+        } else {
+            console.error("Complaint failed:", await response.text());
+        }
+    } catch (error) {
+        console.error("Complaint error:", error);
     }
-  }
+
+    // Reset state after submission
+    setIsModalOpen(false);
+    setComplaintDescription("");
+    setSelectedImage(null);
+};
+
+
+
+  // const [cookies, setCookie, removeCookie] = useCookies(["accessToken"]);
+
+  const logout = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/civilian/logout`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}` 
+        },
+        credentials: "include", 
+        body: JSON.stringify({ data: { _id: id } })
+    });
+    
+  
+      if (response.ok) {
+        // Remove the token from cookies
+        // removeCookie("accessToken", { path: "/" });
+        // removeCookie("refreshToken", { path: "/" });
+  
+        console.log("User logged out successfully");
+        navigate("/profile");
+      } else {
+        console.error("Logout failed:", await response.text());
+      }
+      setLoggedin(false)
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-        <div className="bg-gray-50 w-full flex items-center sm:p-4 p-2 sm:px-10 justify-between mx-10 rounded-2xl sm:text-lg font-semibold text-gray-600">
-        <p>Welcome, John Doe</p>
-        <button className="border p-1 sm:p-2 rounded-sm sm:rounded-xl">Log Out</button>
-      </div>
-      <div className="max-w-4xl mx-auto mt-6">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h1 className="text-3xl font-bold mb-4 text-blue-600">User Profile</h1>
-          <div className="flex items-center space-x-4 mb-6">
-            <div>
-              <h2 className="text-2xl font-semibold">John Doe</h2>
-              <p className="text-gray-600">john.doe@example.com</p>
-            </div>
-          </div>
-          <motion.button
-            className="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsModalOpen(true)}
-          >
-            Submit New Complaint
-          </motion.button>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center h-screen p-4">
+      <img
+        src="/signup_bg.jpg"
+        alt="Background"
+        className="absolute inset-0 h-full w-full object-cover opacity-20  pointer-events-none"
+      />
+      <div className="absolute top-0 w-full flex justify-between items-center px-10 py-5">
+        <h1 className="text-4xl font-semibold">SafetyNet</h1>
+        <nav className="flex gap-6">
+          <a href="#" className="hover:border hover:rounded-2xl p-2 px-4 w-40 text-center" onClick={() => setActiveTab("dashboard")}>
+            Dashboard
+          </a>
+          <a href="#" className="hover:border border-yellow-400 hover:text-yellow-500 hover:rounded-2xl p-2 px-4 w-40 text-center" onClick={() => setActiveTab("complaints")}>
+            Complaints
+          </a>
+        </nav>
+        <div className="w-40 h-8 rounded-full flex items-center justify-center gap-5">
+          <CircleUser className="h-20" />
+          <button className="border p-2 rounded-xl" onClick={() => logout()}>{loggedin?"Log Out":"Login"}</button>
         </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold mb-4 text-blue-600">Complaint History</h2>
-          <ul>
-            {complaints.map((complaint) => (
-              <motion.li
-                key={complaint.id}
-                className="border-b border-gray-200 py-4 last:border-b-0"
+      </div>
+      
+      <div className="flex flex-col justify-center w-full">
+        {activeTab === "dashboard" && (
+          <>
+          <motion.h2 className="text-center text-2xl sm:text-3xl font-semibold px-6" initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 1 }}>
+            Your Safety, Your Control – Empowering You to Act When It Matters Most!
+          </motion.h2>
+          <div className="mt-10 flex gap-10 justify-center">
+            {[
+              { value: 100, label: "Complaints Resolved" },
+              { value: 175, label: "Emergencies Answered" },
+              { value: "150+", label: "Satisfied Clients" },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                className="text-center"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ delay: 0.5 + index * 0.3 }}
               >
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold">{complaint.description}</span>
-                  <span
-                    className={`px-2 py-1 rounded-full text-sm ${
-                      complaint.status === "PENDING" ? "bg-yellow-200 text-yellow-800" : "bg-green-200 text-green-800"
-                    }`}
-                  >
-                    {complaint.status}
-                  </span>
-                </div>
-                <p className="text-gray-600">Created: {complaint.createdAt}</p>
-                <p className="text-gray-600">Location: {complaint.location}</p>
-              </motion.li>
+                <h3 className="text-4xl font-bold">{stat.value}</h3>
+                <p className="text-white">{stat.label}</p>
+              </motion.div>
             ))}
-          </ul>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Submit New Complaint</h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <textarea
-                placeholder="Describe your complaint..."
-                value={complaintDescription}
-                onChange={(e) => setComplaintDescription(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={4}
-              />
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Image (optional)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                {selectedImage && (
-                  <div className="mt-2">
-                    <image
-                      src={selectedImage || "/placeholder.svg"}
-                      alt="Selected"
-                      width={200}
-                      height={200}
-                      className="rounded-lg"
-                    />
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={handleComplaintSubmit}
-                className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Submit Complaint
-              </button>
-            </motion.div>
           </div>
+          </>
         )}
-      </AnimatePresence>
-    </div>
-  )
-}
 
+        {activeTab === "complaints" && (
+          <>
+          <div className="mt-10 overflow-y-auto max-h-70 p-4 rounded-lg items-center flex flex-col">
+            {complaints.map((complaint, i) => (
+              <motion.div key={i} className="p-6 bg-gray-900 text-white rounded-md mb-2 w-1/2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+                <p><strong>Description:</strong> {complaint.description}</p>
+                <p><strong>Status:</strong> {complaint.status}</p>
+                <div className="flex justify-between">
+                  <p><strong>Created At:</strong> {complaint.createdAt}</p>
+                  <p><strong>Location:</strong> {complaint.location}</p>
+                </div>
+              </motion.div>
+            ))}
+            {/* Added Button */}
+            <button onClick={() => setIsModalOpen(true)} className="mt-4 bg-yellow-500 text-black px-6 py-2 rounded-lg">
+              File Complaint
+            </button>
+          </div>
+          <div className="flex justify-center mt-4">
+          <button onClick={() => setIsModalOpen(true)} className="bg-yellow-500 text-white px-6 py-2 rounded-lg">
+            Raise Complaint
+          </button>
+        </div>
+        </>
+        )}
+
+{isModalOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div className="bg-gray-900 p-6 rounded-lg w-96">
+      <h2 className="text-xl mb-4 text-white">Describe your issue</h2>
+
+      {/* Complaint Textarea */}
+      <textarea
+        className="w-full p-2 bg-gray-800 text-white rounded-md mb-4"
+        placeholder="Enter details..."
+        value={complaintDescription}
+        onChange={(e) => setComplaintDescription(e.target.value)}
+      />
+
+      {/* File Input for Image */}
+
+      {/* Action Buttons */}
+      <div className="flex justify-between">
+        <button
+          onClick={() => handleComplaintSubmit()}
+          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
+        >
+          Submit
+        </button>
+        <button
+          onClick={() => setIsModalOpen(false)}
+          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+      </div>
+    </div>
+  );
+}

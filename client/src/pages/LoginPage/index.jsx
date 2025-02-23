@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom"
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import Cookies from 'js-cookie';
+import {useDispatch} from "react-redux"
+import {setLogin} from "../../state/index.js"
 
 export default function LoginPage() {
+  const dispatch=useDispatch()
   const [role, setRole] = useState("User");
   const loginSchema = z.object({
     email: z.string().email({message:"Invalid email address"}),
@@ -64,14 +66,22 @@ const onSubmit = async (data) => {
         )
         if (response.ok) {
           console.log("dept logged in")
-          // Let's check all cookies
-          console.log("All cookies:", document.cookie)
-          console.log("JS-Cookie accessToken:", Cookies.get("accessToken"))
-          
-          // Let's also check the response
           const responseData = await response.json()
-          console.log("Response data:", responseData)
+          console.log(responseData)
+          if (responseData.statuscode) {
+            const { department } = responseData.data;
+        
+            dispatch(
+              setLogin({
+                id: department._id,
+                accessToken: responseData.accessToken
+              })
+            );
+          } else {
+            console.error("Login failed:", responseData.message);
+          }
         }
+        navigate("/profile")
       } catch (error) {
         console.error("Error details:", error)
       }
@@ -82,17 +92,33 @@ const onSubmit = async (data) => {
           {
             method:"POST",
             headers:{"Content-Type":"application/json"},
+            credentials: "include",
             body: JSON.stringify(data)
           }
         )
-        if(response.ok){
-          console.log("user loggedin")
+        if (response.ok) {
+          console.log("dept logged in");
+          
+          const responseData = await response.json();
+          console.log(responseData);
+
+          if (responseData.statuscode) {
+            const { user, accessToken } = responseData.data; // ✅ Extract from responseData.data
+
+            dispatch(
+              setLogin({
+                id: user._id,
+                accessToken: accessToken, // ✅ Correctly access the token
+              })
+            );
+          }
         }
+        navigate("/dashboard")
       } catch (error) {
         console.error(error)
       }
     }
-    navigate("/profile")
+    
     console.log("Data:", data);
 
   } catch (error) {

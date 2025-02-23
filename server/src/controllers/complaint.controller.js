@@ -4,41 +4,35 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploaOnCloudinary } from "../utils/Cloudinary.js";
 import { Complaint } from "../models/complain.model.js";
 
-const filecomplaint=asyncHandler(async(req,res)=>{
-    const{complaint,status}=req.body
+const filecomplaint = asyncHandler(async (req, res) => {
+    const { complaint, status } = req.body;
     const raisedBy = req.user._id;
-    if(!complaint && !raisedBy){
-        throw new ApiError(400,"Error creating complaint")
+
+    if (!complaint || !raisedBy) {
+        throw new ApiError(400, "Error creating complaint");
     }
-    const existedcomplaint=await Complaint.findOne({
-        complaint: complaint,  // Ensure correct field reference
-        raisedBy: raisedBy
-    })
-    if(existedcomplaint){
-        throw new ApiError(409,"complaint already exists")
-    }
-    const complaintImageLocalPath = req.files?.complaintImage?.[0]?.path;
-    if(!complaintImageLocalPath){
-        throw new ApiError(400,"complaint Image required")
-    }
-    const complaintImage=await uploaOnCloudinary(complaintImageLocalPath)
-    if(!complaintImage){
-        throw new ApiError(400,"complaint Image is required")
-    }
-    const newcomplaint=await Complaint.create({
+
+    // Extract complaint image path (if provided)
+    const complaintImageLocalPath = req.files?.complaint?.[0]?.path || null;
+
+    // Create a new complaint entry
+    const newComplaint = await Complaint.create({
         complaint,
         raisedBy,
         status: status || "pending",
-        createdAt:new Date(),
-        complaintImage:complaintImage.url
-    })
-    if(!newcomplaint){
-        throw new ApiError(400,"Error while creating new complaint")
-    } 
+        createdAt: new Date(),
+        complaintImage: complaintImageLocalPath || "No image provided",
+    });
+
+    if (!newComplaint) {
+        throw new ApiError(400, "Error while creating new complaint");
+    }
+
     res.status(201).json(
-        new ApiResponse(201, newcomplaint, "New complaint lodged successfully")
-    )
-})
+        new ApiResponse(201, newComplaint, "New complaint lodged successfully")
+    );
+});
+
 
 const updatecomplaint=asyncHandler(async(req,res)=>{
     const {id}=req.params;
@@ -70,7 +64,7 @@ const getcomplaint=asyncHandler(async(req,res)=>{
         throw new ApiError(404,"complaint request not found")
     }
     res.status(200).json(
-        new ApiResponse(200,complaint,"complaint fetched successfully")
+        new ApiResponse(200,complaintId,"complaint fetched successfully")
     )
 })
 

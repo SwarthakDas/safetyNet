@@ -61,14 +61,14 @@ const registerUser=asyncHandler(async (req, res)=>{
 })
 
 const loginUser=asyncHandler(async(req,res)=>{
-  const {email, username, password, latitude, longitude}= req.body
+  const {email, password, latitude, longitude}= req.body
 
-  if(!username || !email){
+  if(!email){
     throw new ApiError(400,"Username or Email required")
   }
   
   const user=await User.findOne({
-    $or: [{username}, {email}]
+    email
   })
   if(!user){
     throw new ApiError(404, "User does not exist")
@@ -92,10 +92,11 @@ const loginUser=asyncHandler(async(req,res)=>{
 
   const loggedInUser=await User.findById(user._id).select("-password -refreshToken")
 
-  const options={
+  const options = {
     httpOnly: true,
-    secure: true
-  }
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+};
 
   return res.status(200)
   .cookie("accessToken", accessToken, options)
