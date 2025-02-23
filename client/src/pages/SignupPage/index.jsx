@@ -12,19 +12,19 @@ const userSchema = z.object({
   email: z.string().email({message:"Invalid email address"}),
   password:z.string().min(6,"atleast 6 characters"),
   confirmPassword:z.string().min(6,"atleast 6 characters"),
-  firstName: z.string(),
-  lastName: z.string(),
+  firstname: z.string(),
+  lastname: z.string(),
 }).refine((data)=>data.password===data.confirmPassword,{
   message:"Password do not match",
   path: ["confirmPassword"]
 })
 
 const deptSchema = z.object({
-  departmentName: z.string(),
+  departmentname: z.string(),
   email: z.string().email({message:"Invalid email address"}),
   password:z.string().min(6,"atleast 6 characters"),
   confirmPassword:z.string().min(6,"atleast 6 characters"),
-  adminName: z.string(),
+  adminname: z.string(),
   departmentRole: z.string(),
 }).refine((data)=>data.password===data.confirmPassword,{
   message:"Password do not match",
@@ -83,7 +83,7 @@ const onSubmit = async (data) => {
     if(role!=="User"){
       try {
         delete data.confirmPassword
-        const response=await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/register`,
+        const response=await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/department/register`,
           {
             method:"POST",
             headers:{"Content-Type":"application/json"},
@@ -92,6 +92,23 @@ const onSubmit = async (data) => {
         )
         if(response.ok){
           console.log("department registered")
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    else{
+      try {
+        delete data.confirmPassword
+        const response=await fetch(`${import.meta.env.VITE_BACKEND_BASEURL}/civilian/register`,
+          {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(data)
+          }
+        )
+        if(response.ok){
+          console.log("civilian registered")
         }
       } catch (error) {
         console.error(error)
@@ -182,32 +199,32 @@ const onSubmit = async (data) => {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
-          <input type="text" placeholder={role === "User" ? "Username" : "Department Name"} {...register(role === "User" ? "username" : "departmentName")} className="w-full rounded border p-2" />
+          <input type="text" placeholder={role === "User" ? "Username" : "Department Name"} {...register(role === "User" ? "username" : "departmentname")} className="w-full rounded border p-2" />
             <div className="flex space-x-2">
               <AnimatePresence mode="wait">
                 <motion.input
-                  key={role === "User" ? "firstName" : "adminName"}
+                  key={role === "User" ? "firstname" : "adminname"}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
                   transition={{ duration: 0.3 }}
                   type="text"
                   placeholder={role === "User" ? "First Name" : "Admin Name"}
-                  {...register(role === "User" ? "firstName" : "adminName")}
+                  {...register(role === "User" ? "firstname" : "adminname")}
                   className={"w-1/2 rounded border p-2"}
                 />
               </AnimatePresence>
               <AnimatePresence>
                 
                   <motion.input
-                    key={role === "User" ? "lastName" : "departmentRole"}
+                    key={role === "User" ? "lastname" : "departmentRole"}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.3 }}
                     type="text"
                     placeholder={role === "User" ? "Last Name" : "Department Role"}
-                    {...register(role === "User" ? "lastName" : "departmentRole")}
+                    {...register(role === "User" ? "lastname" : "departmentRole")}
                     className="w-1/2 rounded border p-2"
                   />
                 
